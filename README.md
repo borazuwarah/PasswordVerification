@@ -7,26 +7,29 @@ Estima la entropía (bits) según longitud y tipos de caracteres.
 Detecta contraseñas comunes, repeticiones, secuencias (1234, qwer) y patrones tipo Palabra123!.
 Opcional (--hibp): comprueba si ha aparecido en filtraciones con Have I Been Pwned usando k-anonymity: solo se envían los 5 primeros caracteres del hash SHA-1, nunca la contraseña.
 
-Esta herramienta está disponible en 3 lenguajes disponibles (bash, Python, PowerShell).
+Esta herramienta está disponible en 3 lenguajes disponibles 
+- Bash
+- Python
+- PowerShell
 
-## Uso
+## Uso 
 
 ### Python
 ```python
-python PassVerify.py          # análisis local
-python PassVerify.py --hibp   # + comprobación de filtraciones
+python PassVerify.py            # Análisis local
+python PassVerify.py --hibp     # Comprobación de filtraciones
 ```
 
 ### console
 ```bash
-./PassVerify.sh               # análisis local
-./PassVerify.sh --hibp        # + comprobación de filtraciones
+./PassVerify.sh               # Análisis local
+./PassVerify.sh --hibp        # Comprobación de filtraciones
 ```
 
 ### powershell
 ```ps1
-.\PassVerify.ps1        # análisis local
-.\PassVerify.ps1 -Hibp  # + comprobación de filtraciones
+.\PassVerify.ps1              # Análisis local
+.\PassVerify.ps1 -Hibp        # Comprobación de filtraciones
 ```
 
 La contraseña se pide con getpass, así que no queda en pantalla ni en el historial de la shell.
