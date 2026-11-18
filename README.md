@@ -10,20 +10,20 @@ Opcional (--hibp): comprueba si ha aparecido en filtraciones con Have I Been Pwn
 
 ### Python
 ```python
-python passcheck.py          # análisis local
-python passcheck.py --hibp   # + comprobación de filtraciones
+python PassVerify.py          # análisis local
+python PassVerify.py --hibp   # + comprobación de filtraciones
 ```
 
 ### Bash
 ```bash
-./passcheck.sh               # análisis local
-./passcheck.sh --hibp        # + comprobación de filtraciones
+./PassVerify.sh               # análisis local
+./PassVerify.sh --hibp        # + comprobación de filtraciones
 ```
 
 ### PowerShell
 ```ps1
-.\PasswordVerification.ps1        # análisis local
-.\PasswordVerification.ps1 -Hibp  # + comprobación de filtraciones
+.\PassVerify.ps1        # análisis local
+.\PassVerify.ps1 -Hibp  # + comprobación de filtraciones
 ```
 
 La contraseña se pide con getpass, así que no queda en pantalla ni en el historial de la shell.
