@@ -1,7 +1,19 @@
 #!/bin/sh
 # PasswordVerification.sh: analizador de fortaleza de contraseñas (POSIX sh).
 # Local, sin dependencias salvo utilidades estándar (awk, grep, tr; curl y sha1sum/shasum para --hibp).
-# Uso: ./passcheck.sh [--hibp]
+# Uso: ./PassVerify.sh [--hibp]
+
+
+#Colours
+endColour="\033[0m\e[0m"
+blueColour="\e[0;34m\033[1m"
+greenColour="\e[0;32m\033[1m"
+grayColour="\e[0;37m\033[1m"
+purpleColour="\e[0;35m\033[1m"
+redColour="\e[0;31m\033[1m"
+turquoiseColour="\e[0;36m\033[1m"
+yellowColour="\e[0;33m\033[1m"
+
 
 HIBP=0
 [ "${1:-}" = "--hibp" ] && HIBP=1
