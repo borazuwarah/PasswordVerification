@@ -53,3 +53,8 @@ La entropía es una estimación, no una garantía. Usa un gestor de contraseñas
 ## Licencia
 
 MIT
+
+La licencia MIT es una licencia de software libre permisiva creada por el MIT que permite usar, copiar, modificar y distribuir software, incluso con fines comerciales, con la única obligación de mantener el aviso de copyright y la licencia original.
+
+#### Definición
+La licencia MIT es una licencia de software libre y de código abierto muy flexible. Permite usar, modificar, vender y redistribuir el software sin restricciones significativas, siempre que se conserve el aviso de derechos de autor y el texto de la licencia.
