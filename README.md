@@ -18,6 +18,9 @@ La contraseña se pide con getpass, así que no queda en pantalla ni en el histo
 
 La entropía es una estimación, no una garantía. Usa un gestor de contraseñas y 2FA.
 
+## Imagenes
+
+
 ## Licencia
 
 MIT
