@@ -1,12 +1,12 @@
 <#
 .SYNOPSIS
-    passcheck.ps1: analizador de fortaleza de contraseñas (PowerShell 5.1 y 7+).
+    PassVerify.ps1: analizador de fortaleza de contraseñas (PowerShell 5.1 y 7+).
 .DESCRIPTION
     Local y sin dependencias. Con -Hibp consulta Have I Been Pwned usando
     k-anonymity (solo se envían 5 caracteres del hash SHA-1).
 .EXAMPLE
-    .\passcheck.ps1
-    .\passcheck.ps1 -Hibp
+    .\PassVerify.ps1
+    .\PassVerify.ps1 -Hibp
 #>
 param([switch]$Hibp)
 
