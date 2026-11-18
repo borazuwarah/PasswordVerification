@@ -16,8 +16,8 @@ Esta herramienta está disponible en 3 lenguajes disponibles
 
 ### Python
 ```python
-python PassVerify.py            # Análisis local
-python PassVerify.py --hibp     # Comprobación de filtraciones
+python3 PassVerify.py            # Análisis local
+python3 PassVerify.py --hibp     # Comprobación de filtraciones
 ```
 
 ### console
