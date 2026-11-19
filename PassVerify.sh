@@ -33,7 +33,7 @@ HIBP=0
 [ "${1:-}" = "--hibp" ] && HIBP=1
 
 # Leer la contraseña sin eco
-printf 'Contraseña (no se mostrará): ' >&2
+echo  "${yellowColour}[+]${endColour} Contraseña (no se mostrará):"  >&2
 if [ -t 0 ]; then
     stty -echo
     trap 'stty echo' EXIT INT TERM
@@ -111,7 +111,7 @@ case $2 in
 esac
 
 echo
-echo "Longitud : $LEN"
+echo "${yellowColour}[+] ${endColour}${grayColour}Longitud : $LEN${endColour}"
 echo "Entropía : ~$BITS bits"
 echo "Nivel    : $NIVEL"
 # ${AVISOS%?} quita el salto de línea final para no dejar una línea en blanco
