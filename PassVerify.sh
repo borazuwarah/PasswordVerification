@@ -1,7 +1,21 @@
 #!/bin/sh
-# PasswordVerification.sh: analizador de fortaleza de contraseñas (POSIX sh).
+# PassVerify.sh: analizador de fortaleza de contraseñas (POSIX sh).
 # Local, sin dependencias salvo utilidades estándar (awk, grep, tr; curl y sha1sum/shasum para --hibp).
 # Uso: ./PassVerify.sh [--hibp]
+#
+# Historial de versiones (la más reciente arriba):
+#
+#    1.0.1 (2026-11-19) Corregido el nivel de fortaleza con locales que usan coma decimal (p. ej. es_ES): awk
+#                       escribía la entropía como "104,9", el segundo awk la comparaba como texto y daba niveles
+#                       absurdos (≥100 bits salía MUY DÉBIL, 80–99,9 salía MUY FUERTE). Ahora entropía y nivel se
+#                       calculan en un único awk con LC_ALL=C, así que el decimal siempre es '.'. Los mensajes de
+#                       salida pasan de printf a echo; la contraseña se sigue pasando con printf a tr/grep/sha1sum
+#                       (el echo de dash interpreta '\' y añade un salto de línea, lo que alteraría el análisis y
+#                       el hash de HIBP).
+#    1.0.0 (2026-11-18) Primera versión. Lectura de la contraseña sin eco, estimación de entropía según longitud y
+#                       alfabeto, avisos (menos de 12 caracteres, contraseñas comunes, caracteres repetidos,
+#                       secuencias de teclado/alfabeto, patrón 'Palabra123!') con penalización de la entropía,
+#                       nivel de MUY DÉBIL a MUY FUERTE y consulta opcional a Have I Been Pwned (--hibp, k-anonimato).
 
 
 #Colours
@@ -26,7 +40,7 @@ if [ -t 0 ]; then
 fi
 IFS= read -r PW
 if [ -t 0 ]; then stty echo; trap - EXIT INT TERM; fi
-printf '\n' >&2
+echo >&2
 
 [ -n "$PW" ] || { echo "No has introducido nada." >&2; exit 1; }
 
@@ -83,34 +97,42 @@ if printf '%s\n' "$PW" | grep -Eq '^[[:alpha:]]+[0-9]{1,4}[!@#$%^&*.]?$'; then
     FACTOR=$((FACTOR * 70 / 100))
 fi
 
-# Entropía
-BITS=$(awk -v l="$LEN" -v a="$ALFA" -v f="$FACTOR" -v t="${TOPE:-0}" 'BEGIN {
+# Entropía y nivel (LC_ALL=C para que el decimal sea siempre '.')
+set -- $(LC_ALL=C awk -v l="$LEN" -v a="$ALFA" -v f="$FACTOR" -v t="${TOPE:-0}" 'BEGIN {
     b = (a > 0) ? l * log(a) / log(2) : 0
     if (t > 0 && b > t) b = t
-    printf "%.1f", b * f / 100 }')
+    b = b * f / 100
+    n = (b < 40) ? 1 : (b < 60) ? 2 : (b < 80) ? 3 : (b < 100) ? 4 : 5
+    printf "%.1f %d", b, n }')
+BITS=$1
+case $2 in
+    1) NIVEL="MUY DÉBIL";; 2) NIVEL="DÉBIL";; 3) NIVEL="ACEPTABLE";;
+    4) NIVEL="FUERTE";; *) NIVEL="MUY FUERTE";;
+esac
 
-NIVEL=$(awk -v b="$BITS" 'BEGIN {
-    if (b < 40) print "MUY DÉBIL"; else if (b < 60) print "DÉBIL";
-    else if (b < 80) print "ACEPTABLE"; else if (b < 100) print "FUERTE";
-    else print "MUY FUERTE" }')
-
-printf '\nLongitud : %s\nEntropía : ~%s bits\nNivel    : %s\n' "$LEN" "$BITS" "$NIVEL"
-printf '%s' "$AVISOS"
+echo
+echo "Longitud : $LEN"
+echo "Entropía : ~$BITS bits"
+echo "Nivel    : $NIVEL"
+# ${AVISOS%?} quita el salto de línea final para no dejar una línea en blanco
+if [ -n "$AVISOS" ]; then echo "${AVISOS%?}"; fi
 
 # Have I Been Pwned (k-anonymity)
 if [ "$HIBP" -eq 1 ]; then
     if command -v sha1sum >/dev/null 2>&1; then SHA=sha1sum; else SHA="shasum -a 1"; fi
     HASH=$(printf '%s' "$PW" | $SHA | cut -d' ' -f1 | tr '[:lower:]' '[:upper:]')
-    PRE=$(printf '%s' "$HASH" | cut -c1-5)
-    SUF=$(printf '%s' "$HASH" | cut -c6-)
+    PRE=$(echo "$HASH" | cut -c1-5)
+    SUF=$(echo "$HASH" | cut -c6-)
     if RESP=$(curl -fsS -m 8 "https://api.pwnedpasswords.com/range/$PRE" 2>/dev/null); then
-        VECES=$(printf '%s\n' "$RESP" | tr -d '\r' | grep "^$SUF:" | cut -d: -f2)
+        VECES=$(echo "$RESP" | tr -d '\r' | grep "^$SUF:" | cut -d: -f2)
+        echo
         if [ -n "$VECES" ]; then
-            printf '\nHIBP: ¡aparece %s veces en filtraciones! No la uses.\n' "$VECES"
+            echo "HIBP: ¡aparece $VECES veces en filtraciones! No la uses."
         else
-            printf '\nHIBP: no aparece en filtraciones conocidas.\n'
+            echo "HIBP: no aparece en filtraciones conocidas."
         fi
     else
-        printf '\nHIBP: no se pudo consultar (¿sin conexión?).\n'
+        echo
+        echo "HIBP: no se pudo consultar (¿sin conexión?)."
     fi
 fi
