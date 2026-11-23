@@ -4,10 +4,12 @@
 # Uso: ./PassVerify.sh [--hibp]
 #
 #
-# Ultima Versión         1.0.2
+# Ultima Versión         1.0.3
 #
 # Historial de versiones (la más reciente arriba):
 #
+#    1.0.3 (2026-11-23) Se añade -h / --help con la explicación de uso. Una opción desconocida ahora muestra
+#                       un error y sale con código 1 (antes se ignoraba).
 #    1.0.2 (2026-11-23) Cambio estético, se añaden colores en las salidas de datos.
 #    1.0.1 (2026-11-19) Corregido el nivel de fortaleza con locales que usan coma decimal (p. ej. es_ES): awk
 #                       escribía la entropía como "104,9", el segundo awk la comparaba como texto y daba niveles
@@ -26,9 +28,6 @@
 #                       - ACEPTABLE
 #                       - FUERTE
 #                       - MUY FUERTE
-#
-
-
 
 #Colours
 endColour="\033[0m\e[0m"
@@ -40,9 +39,38 @@ redColour="\e[0;31m\033[1m"
 turquoiseColour="\e[0;36m\033[1m"
 yellowColour="\e[0;33m\033[1m"
 
+# Ayuda
+uso() {
+    echo -e "${yellowColour}PassVerify${endColour}${grayColour} - Analizador de fortaleza de contraseñas${endColour}"
+    echo
+    echo -e "${yellowColour}Uso:${endColour}"
+    echo -e "  ${grayColour}./PassVerify.sh [opción]${endColour}"
+    echo
+    echo -e "${yellowColour}Opciones:${endColour}"
+    echo -e "  ${blueColour}--hibp${endColour}        ${grayColour}Además del análisis local, comprueba si la contraseña aparece${endColour}"
+    echo -e "                ${grayColour}en filtraciones (Have I Been Pwned). Solo se envían 5 caracteres${endColour}"
+    echo -e "                ${grayColour}del hash SHA-1, nunca la contraseña. Requiere curl y conexión.${endColour}"
+    echo -e "  ${blueColour}-h, --help${endColour}    ${grayColour}Muestra esta ayuda y sale.${endColour}"
+    echo
+    echo -e "${yellowColour}Cómo funciona:${endColour}"
+    echo -e "  ${grayColour}El script pide la contraseña por teclado (no se muestra en pantalla),${endColour}"
+    echo -e "  ${grayColour}estima su entropía y la clasifica de MUY DÉBIL a MUY FUERTE.${endColour}"
+    echo -e "  ${grayColour}El análisis es local: la contraseña no se guarda ni se pasa como argumento.${endColour}"
+    echo
+    echo -e "${yellowColour}Ejemplos:${endColour}"
+    echo -e "  ${grayColour}./PassVerify.sh          # análisis local${endColour}"
+    echo -e "  ${grayColour}./PassVerify.sh --hibp   # + comprobación de filtraciones${endColour}"
+}
 
 HIBP=0
-[ "${1:-}" = "--hibp" ] && HIBP=1
+case "${1:-}" in
+    "")         ;;
+    --hibp)     HIBP=1;;
+    -h|--help)  uso; exit 0;;
+    *)          echo -e "${redColour}[!] Opción desconocida: $1${endColour}" >&2
+                echo -e "${grayColour}    Usa -h para ver cómo se utiliza.${endColour}" >&2
+                exit 1;;
+esac
 
 # Leer la contraseña sin eco
 echo -e "${yellowColour}[+]${endColour}${grayColour} Contraseña (no se mostrará):${endColour}"  >&2
@@ -54,7 +82,7 @@ IFS= read -r PW
 if [ -t 0 ]; then stty echo; trap - EXIT INT TERM; fi
 echo >&2
 
-[ -n "$PW" ] || { echo "No has introducido nada." >&2; exit 1; }
+[ -n "$PW" ] || { echo -e "${redColour}[!] No has introducido nada.${endColour}" >&2; exit 1; }
 
 LEN=${#PW}
 LOW=$(printf '%s' "$PW" | tr '[:upper:]' '[:lower:]')
@@ -70,21 +98,18 @@ case $PW in *[[:digit:]]*) ALFA=$((ALFA + 10));; esac
 case $PW in *[[:punct:]]*) ALFA=$((ALFA + 32));; esac
 
 # Comprobaciones
-[ "$LEN" -lt 12 ] && AVISOS="$AVISOS  ! Menos de 12 caracteres: alárgala.
-"
+[ "$LEN" -lt 12 ] && AVISOS="$AVISOS  ! Menos de 12 caracteres: alárgala."
 
 case $LOW in
-    123456|123456789|12345678|password|qwerty|abc123|111111|123123|admin|\
+    123456|123456789|12345678|9876543210|password|qwerty|abc123|111111|123123|admin|\
     letmein|welcome|iloveyou|contraseña|contrasena|password1|qwerty123|\
     000000|dragon|football|monkey|master|login|1234|12345)
-        AVISOS="$AVISOS  ! Es una de las contraseñas más usadas.
-"
+        AVISOS="$AVISOS  ! Es una de las contraseñas más usadas."
         TOPE=10;;
 esac
 
 if printf '%s\n' "$PW" | grep -Eq '(.)\1\1'; then
-    AVISOS="$AVISOS  ! Tiene caracteres repetidos (aaa, 111...).
-"
+    AVISOS="$AVISOS  ! Tiene caracteres repetidos (aaa, 111...)."
     FACTOR=$((FACTOR * 80 / 100))
 fi
 
@@ -98,14 +123,12 @@ if PW_LOW="$LOW" awk 'BEGIN {
             if (index(pw, t) || index(pw, r)) exit 0
         }
     exit 1 }'; then
-    AVISOS="$AVISOS  ! Contiene secuencias previsibles (abcd, 1234, qwer...).
-"
+    AVISOS="$AVISOS  ! Contiene secuencias previsibles (abcd, 1234, qwer...)."
     FACTOR=$((FACTOR * 80 / 100))
 fi
 
 if printf '%s\n' "$PW" | grep -Eq '^[[:alpha:]]+[0-9]{1,4}[!@#$%^&*.]?$'; then
-    AVISOS="$AVISOS  ! Patrón típico 'Palabra123!': fácil de adivinar.
-"
+    AVISOS="$AVISOS  ! Patrón típico 'Palabra123!': fácil de adivinar."
     FACTOR=$((FACTOR * 70 / 100))
 fi
 
@@ -149,7 +172,6 @@ if [ "$HIBP" -eq 1 ]; then
             echo -e "${yellowColour}[+] ${endColour}${redColour}HIBP: no aparece en filtraciones conocidas.${endColour}"
         fi
     else
-        echo
         echo -e "${redColour}HIBP: no se pudo consultar (¿sin conexión?).${endColour}"
     fi
 fi
