@@ -52,6 +52,14 @@ La entropía es una estimación, no una garantía. Usa un gestor de contraseñas
 
 ![PasswordVerify](images/Password3.png)
 
+### Python
+
+![PasswordVerify](images/Python.png)
+
+![PasswordVerify](images/Python2.png)
+
+![PasswordVerify](images/Python3.png)
+
 ## Licencia
 
 MIT

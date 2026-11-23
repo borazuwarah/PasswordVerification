@@ -1,14 +1,14 @@
 #!/bin/bash
-# PassVerify.sh: analizador de fortaleza de contraseñas (sh).
+# PassVerify.sh: analizador de fortaleza de contraseñas (bash).
 # Local, sin dependencias salvo utilidades estándar (awk, grep, tr; curl y sha1sum/shasum para --hibp).
-# Uso: ./PassVerify.sh [--hibp]
+# Uso: ./PassVerify.sh [--hibp | -h | -v]
 #
-#
-# Ultima Versión         1.0.4
+# Última versión: ver VERSION más abajo.
 #
 # Historial de versiones (la más reciente arriba):
 #
-#    1.0.4 (2026-11-23) Se añade -v / --version para mostrar la versión del script.
+#    1.0.4 (2026-11-23) Se añade -v / --version para mostrar la versión del script, se corrigen colores de mensajes
+#                       de salida y los avisos se muestran uno por línea con su propio '[!]'.
 #    1.0.3 (2026-11-23) Se añade -h / --help con la explicación de uso. Una opción desconocida ahora muestra
 #                       un error y sale con código 1 (antes se ignoraba).
 #    1.0.2 (2026-11-23) Cambio estético, se añaden colores en las salidas de datos.
@@ -30,15 +30,16 @@
 #                       - FUERTE
 #                       - MUY FUERTE
 
-#Colours
-endColour="\033[0m\e[0m"
-blueColour="\e[0;34m\033[1m"
-greenColour="\e[0;32m\033[1m"
-grayColour="\e[0;37m\033[1m"
-purpleColour="\e[0;35m\033[1m"
-redColour="\e[0;31m\033[1m"
-turquoiseColour="\e[0;36m\033[1m"
-yellowColour="\e[0;33m\033[1m"
+VERSION="1.0.4"
+
+# Colores (secuencias ANSI: 1 = negrita, 3X = color del texto; se interpretan con echo -e)
+endColour='\e[0m'
+blueColour='\e[1;34m'
+greenColour='\e[1;32m'
+grayColour='\e[1;37m'
+purpleColour='\e[1;35m'
+redColour='\e[1;31m'
+yellowColour='\e[1;33m'
 
 # Ayuda
 uso() {
@@ -52,6 +53,7 @@ uso() {
     echo -e "                ${grayColour}en filtraciones (Have I Been Pwned). Solo se envían 5 caracteres${endColour}"
     echo -e "                ${grayColour}del hash SHA-1, nunca la contraseña. Requiere curl y conexión.${endColour}"
     echo -e "  ${blueColour}-h, --help${endColour}    ${grayColour}Muestra esta ayuda y sale.${endColour}"
+    echo -e "  ${blueColour}-v, --version${endColour} ${grayColour}Muestra la versión y sale.${endColour}"
     echo
     echo -e "${yellowColour}Cómo funciona:${endColour}"
     echo -e "  ${grayColour}El script pide la contraseña por teclado (no se muestra en pantalla),${endColour}"
@@ -59,25 +61,25 @@ uso() {
     echo -e "  ${grayColour}El análisis es local: la contraseña no se guarda ni se pasa como argumento.${endColour}"
     echo
     echo -e "${yellowColour}Ejemplos:${endColour}"
-    echo -e "  ${grayColour}./PassVerify.sh                  # análisis local${endColour}"
-    echo -e "  ${grayColour}./PassVerify.sh --hibp           # + comprobación de filtraciones (have i be powned)${endColour}"
-    echo -e "  ${grayColour}./PassVerify.sh -h | --help      # Muestra esta ayuda${endColour}"    
-    echo -e "  ${grayColour}./PassVerify.sh -v | --version   # Muestra la versión${endColour}"
-
+    echo -e "  ${grayColour}./PassVerify.sh                  ${endColour}${purpleColour}# análisis local${endColour}"
+    echo -e "  ${grayColour}./PassVerify.sh --hibp           ${endColour}${purpleColour}# + comprobación de filtraciones (Have I Been Pwned)${endColour}"
+    echo -e "  ${grayColour}./PassVerify.sh -h | --help      ${endColour}${purpleColour}# Muestra esta ayuda${endColour}"
+    echo -e "  ${grayColour}./PassVerify.sh -v | --version   ${endColour}${purpleColour}# Muestra la versión${endColour}"
 }
 
 HIBP=0
 case "${1:-}" in
-    "")         ;;
-    --hibp)     HIBP=1;;
-    -h|--help)  uso; exit 0;;
-    *)          echo -e "${redColour}[!] Opción desconocida: $1${endColour}" >&2
-                echo -e "${grayColour}    Usa -h para ver cómo se utiliza.${endColour}" >&2
-                exit 1;;
+    "")           ;;
+    --hibp)       HIBP=1;;
+    -h|--help)    uso; exit 0;;
+    -v|--version) echo "PassVerify $VERSION"; exit 0;;
+    *)            echo -e "${redColour}[!] Opción desconocida: $1${endColour}" >&2
+                  echo -e "${grayColour}    Usa -h para ver cómo se utiliza.${endColour}" >&2
+                  exit 1;;
 esac
 
 # Leer la contraseña sin eco
-echo -e "${yellowColour}[+]${endColour}${grayColour} Contraseña (no se mostrará):${endColour}"  >&2
+echo -e "${yellowColour}[+]${endColour}${grayColour} Contraseña (no se mostrará):${endColour}" >&2
 if [ -t 0 ]; then
     stty -echo
     trap 'stty echo' EXIT INT TERM
@@ -90,7 +92,7 @@ echo >&2
 
 LEN=${#PW}
 LOW=$(printf '%s' "$PW" | tr '[:upper:]' '[:lower:]')
-AVISOS=""
+AVISOS=()           # lista de avisos, se muestra uno por línea
 FACTOR=100          # porcentaje aplicado a la entropía
 TOPE=""             # tope de entropía (contraseñas comunes)
 
@@ -102,18 +104,18 @@ case $PW in *[[:digit:]]*) ALFA=$((ALFA + 10));; esac
 case $PW in *[[:punct:]]*) ALFA=$((ALFA + 32));; esac
 
 # Comprobaciones
-[ "$LEN" -lt 12 ] && AVISOS="$AVISOS  ! Menos de 12 caracteres: alárgala."
+[ "$LEN" -lt 12 ] && AVISOS+=("Menos de 12 caracteres: alárgala.")
 
 case $LOW in
     123456|123456789|12345678|9876543210|password|qwerty|abc123|111111|123123|admin|\
     letmein|welcome|iloveyou|contraseña|contrasena|password1|qwerty123|\
     000000|dragon|football|monkey|master|login|1234|12345)
-        AVISOS="$AVISOS  ! Es una de las contraseñas más usadas."
+        AVISOS+=("Es una de las contraseñas más usadas.")
         TOPE=10;;
 esac
 
 if printf '%s\n' "$PW" | grep -Eq '(.)\1\1'; then
-    AVISOS="$AVISOS  ! Tiene caracteres repetidos (aaa, 111...)."
+    AVISOS+=("Tiene caracteres repetidos (aaa, 111...).")
     FACTOR=$((FACTOR * 80 / 100))
 fi
 
@@ -127,12 +129,12 @@ if PW_LOW="$LOW" awk 'BEGIN {
             if (index(pw, t) || index(pw, r)) exit 0
         }
     exit 1 }'; then
-    AVISOS="$AVISOS  ! Contiene secuencias previsibles (abcd, 1234, qwer...)."
+    AVISOS+=("Contiene secuencias previsibles (abcd, 1234, qwer...).")
     FACTOR=$((FACTOR * 80 / 100))
 fi
 
 if printf '%s\n' "$PW" | grep -Eq '^[[:alpha:]]+[0-9]{1,4}[!@#$%^&*.]?$'; then
-    AVISOS="$AVISOS  ! Patrón típico 'Palabra123!': fácil de adivinar."
+    AVISOS+=("Patrón típico 'Palabra123!': fácil de adivinar.")
     FACTOR=$((FACTOR * 70 / 100))
 fi
 
@@ -145,21 +147,19 @@ set -- $(LC_ALL=C awk -v l="$LEN" -v a="$ALFA" -v f="$FACTOR" -v t="${TOPE:-0}" 
     printf "%.1f %d", b, n }')
 BITS=$1
 case $2 in
-    1) NIVEL="MUY DÉBIL";; 
-    2) NIVEL="DÉBIL";; 
+    1) NIVEL="MUY DÉBIL";;
+    2) NIVEL="DÉBIL";;
     3) NIVEL="ACEPTABLE";;
-    4) NIVEL="FUERTE";; 
+    4) NIVEL="FUERTE";;
     *) NIVEL="MUY FUERTE";;
 esac
 
-echo
 echo -e "${yellowColour}[+] ${endColour}${grayColour}Longitud :${endColour}${blueColour} $LEN${endColour}"
-echo -e "${yellowColour}[+] ${endColour}${grayColour}Entropía :${endColour}${blueColour} ~$BITS bits"
+echo -e "${yellowColour}[+] ${endColour}${grayColour}Entropía :${endColour}${blueColour} ~$BITS bits${endColour}"
 echo -e "${yellowColour}[+] ${endColour}${grayColour}Nivel    :${endColour}${blueColour} $NIVEL${endColour}"
-# ${AVISOS%?} quita el salto de línea final para no dejar una línea en blanco
-if [ -n "$AVISOS" ]; then
-    echo -e "${yellowColour}[+] ${endColour}${redColour}${AVISOS%?}${endColour}";
-fi
+for aviso in "${AVISOS[@]}"; do
+    echo -e "${redColour}[!] ${aviso}${endColour}"
+done
 
 # Have I Been Pwned (k-anonymity)
 if [ "$HIBP" -eq 1 ]; then
@@ -169,13 +169,13 @@ if [ "$HIBP" -eq 1 ]; then
     SUF=$(echo "$HASH" | cut -c6-)
     if RESP=$(curl -fsS -m 8 "https://api.pwnedpasswords.com/range/$PRE" 2>/dev/null); then
         VECES=$(echo "$RESP" | tr -d '\r' | grep "^$SUF:" | cut -d: -f2)
-        echo
+        echo "------"
         if [ -n "$VECES" ]; then
-            echo -e "${yellowColour}[+] ${endColour}${grayColour}HIBP: ¡aparece ${blueColour}$VECES${endColour}${grayColour} veces en filtraciones! No la uses.${endColour}"
+            echo -e "${redColour}[!] HIBP: Tu contraseña ¡aparece ${endColour}${blueColour}$VECES${endColour}${redColour} veces en filtraciones! No la uses.${endColour}"
         else
-            echo -e "${yellowColour}[+] ${endColour}${redColour}HIBP: no aparece en filtraciones conocidas.${endColour}"
+            echo -e "${yellowColour}[+] ${endColour}${greenColour}HIBP: no aparece en filtraciones conocidas.${endColour}"
         fi
     else
-        echo -e "${redColour}HIBP: no se pudo consultar (¿sin conexión?).${endColour}"
+        echo -e "${redColour}[!] HIBP: no se pudo consultar (¿sin conexión?).${endColour}"
     fi
 fi
