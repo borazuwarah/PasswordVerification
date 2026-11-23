@@ -20,7 +20,7 @@ python3 PassVerify.py            # Análisis local
 python3 PassVerify.py --hibp     # Comprobación de filtraciones
 ```
 
-### console
+### sh
 ```bash
 ./PassVerify.sh               # Análisis local
 ./PassVerify.sh --hibp        # Comprobación de filtraciones
