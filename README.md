@@ -40,14 +40,16 @@ La entropía es una estimación, no una garantía. Usa un gestor de contraseñas
 
 ## Imagenes
 
-### Python
 
 
 ### Bash
 
-![PasswordVerify](images/Password.png)
-![PasswordVerify](images/Password1.png)
-![PasswordVerify](images/Password2.png)
+![PasswordVerify](images/Password.png)  
+
+![PasswordVerify](images/Password1.png)  
+
+![PasswordVerify](images/Password2.png)  
+
 ![PasswordVerify](images/Password3.png)
 
 ## Licencia
