@@ -1,10 +1,14 @@
-#!/bin/sh
-# PassVerify.sh: analizador de fortaleza de contraseñas (POSIX sh).
+#!/bin/bash
+# PassVerify.sh: analizador de fortaleza de contraseñas (sh).
 # Local, sin dependencias salvo utilidades estándar (awk, grep, tr; curl y sha1sum/shasum para --hibp).
 # Uso: ./PassVerify.sh [--hibp]
 #
+#
+# Ultima Versión         1.0.2
+#
 # Historial de versiones (la más reciente arriba):
 #
+#    1.0.2 (2026-11-23) Cambio estético, se añaden colores en las salidas de datos.
 #    1.0.1 (2026-11-19) Corregido el nivel de fortaleza con locales que usan coma decimal (p. ej. es_ES): awk
 #                       escribía la entropía como "104,9", el segundo awk la comparaba como texto y daba niveles
 #                       absurdos (≥100 bits salía MUY DÉBIL, 80–99,9 salía MUY FUERTE). Ahora entropía y nivel se
@@ -15,7 +19,15 @@
 #    1.0.0 (2026-11-18) Primera versión. Lectura de la contraseña sin eco, estimación de entropía según longitud y
 #                       alfabeto, avisos (menos de 12 caracteres, contraseñas comunes, caracteres repetidos,
 #                       secuencias de teclado/alfabeto, patrón 'Palabra123!') con penalización de la entropía,
-#                       nivel de MUY DÉBIL a MUY FUERTE y consulta opcional a Have I Been Pwned (--hibp, k-anonimato).
+#                       nivel: de MUY DÉBIL a MUY FUERTE y consulta opcional a Have I Been Pwned (--hibp, k-anonimato).
+#                       Diferentes fortalezas de contraseñas:
+#                       - MUY DÉBIL
+#                       - DÉBIL
+#                       - ACEPTABLE
+#                       - FUERTE
+#                       - MUY FUERTE
+#
+
 
 
 #Colours
@@ -33,7 +45,7 @@ HIBP=0
 [ "${1:-}" = "--hibp" ] && HIBP=1
 
 # Leer la contraseña sin eco
-echo  "${yellowColour}[+]${endColour} Contraseña (no se mostrará):"  >&2
+echo -e "${yellowColour}[+]${endColour}${grayColour} Contraseña (no se mostrará):${endColour}"  >&2
 if [ -t 0 ]; then
     stty -echo
     trap 'stty echo' EXIT INT TERM
@@ -106,16 +118,21 @@ set -- $(LC_ALL=C awk -v l="$LEN" -v a="$ALFA" -v f="$FACTOR" -v t="${TOPE:-0}" 
     printf "%.1f %d", b, n }')
 BITS=$1
 case $2 in
-    1) NIVEL="MUY DÉBIL";; 2) NIVEL="DÉBIL";; 3) NIVEL="ACEPTABLE";;
-    4) NIVEL="FUERTE";; *) NIVEL="MUY FUERTE";;
+    1) NIVEL="MUY DÉBIL";; 
+    2) NIVEL="DÉBIL";; 
+    3) NIVEL="ACEPTABLE";;
+    4) NIVEL="FUERTE";; 
+    *) NIVEL="MUY FUERTE";;
 esac
 
 echo
-echo "${yellowColour}[+] ${endColour}${grayColour}Longitud : $LEN${endColour}"
-echo "Entropía : ~$BITS bits"
-echo "Nivel    : $NIVEL"
+echo -e "${yellowColour}[+] ${endColour}${grayColour}Longitud :${endColour}${blueColour} $LEN${endColour}"
+echo -e "${yellowColour}[+] ${endColour}${grayColour}Entropía :${endColour}${blueColour} ~$BITS bits"
+echo -e "${yellowColour}[+] ${endColour}${grayColour}Nivel    :${endColour}${blueColour} $NIVEL${endColour}"
 # ${AVISOS%?} quita el salto de línea final para no dejar una línea en blanco
-if [ -n "$AVISOS" ]; then echo "${AVISOS%?}"; fi
+if [ -n "$AVISOS" ]; then
+    echo -e "${yellowColour}[+] ${endColour}${redColour}${AVISOS%?}${endColour}";
+fi
 
 # Have I Been Pwned (k-anonymity)
 if [ "$HIBP" -eq 1 ]; then
@@ -127,12 +144,12 @@ if [ "$HIBP" -eq 1 ]; then
         VECES=$(echo "$RESP" | tr -d '\r' | grep "^$SUF:" | cut -d: -f2)
         echo
         if [ -n "$VECES" ]; then
-            echo "HIBP: ¡aparece $VECES veces en filtraciones! No la uses."
+            echo -e "${yellowColour}[+] ${endColour}${grayColour}HIBP: ¡aparece ${blueColour}$VECES${endColour}${grayColour} veces en filtraciones! No la uses.${endColour}"
         else
-            echo "HIBP: no aparece en filtraciones conocidas."
+            echo -e "${yellowColour}[+] ${endColour}${redColour}HIBP: no aparece en filtraciones conocidas.${endColour}"
         fi
     else
         echo
-        echo "HIBP: no se pudo consultar (¿sin conexión?)."
+        echo -e "${redColour}HIBP: no se pudo consultar (¿sin conexión?).${endColour}"
     fi
 fi
