@@ -4,10 +4,11 @@
 # Uso: ./PassVerify.sh [--hibp]
 #
 #
-# Ultima Versión         1.0.3
+# Ultima Versión         1.0.4
 #
 # Historial de versiones (la más reciente arriba):
 #
+#    1.0.4 (2026-11-23) Se añade -v / --version para mostrar la versión del script.
 #    1.0.3 (2026-11-23) Se añade -h / --help con la explicación de uso. Una opción desconocida ahora muestra
 #                       un error y sale con código 1 (antes se ignoraba).
 #    1.0.2 (2026-11-23) Cambio estético, se añaden colores en las salidas de datos.
@@ -61,6 +62,8 @@ uso() {
     echo -e "  ${grayColour}./PassVerify.sh                  # análisis local${endColour}"
     echo -e "  ${grayColour}./PassVerify.sh --hibp           # + comprobación de filtraciones (have i be powned)${endColour}"
     echo -e "  ${grayColour}./PassVerify.sh -h | --help      # Muestra esta ayuda${endColour}"    
+    echo -e "  ${grayColour}./PassVerify.sh -v | --version   # Muestra la versión${endColour}"
+
 }
 
 HIBP=0
