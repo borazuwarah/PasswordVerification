@@ -58,8 +58,9 @@ uso() {
     echo -e "  ${grayColour}El análisis es local: la contraseña no se guarda ni se pasa como argumento.${endColour}"
     echo
     echo -e "${yellowColour}Ejemplos:${endColour}"
-    echo -e "  ${grayColour}./PassVerify.sh          # análisis local${endColour}"
-    echo -e "  ${grayColour}./PassVerify.sh --hibp   # + comprobación de filtraciones${endColour}"
+    echo -e "  ${grayColour}./PassVerify.sh                  # análisis local${endColour}"
+    echo -e "  ${grayColour}./PassVerify.sh --hibp           # + comprobación de filtraciones (have i be powned)${endColour}"
+    echo -e "  ${grayColour}./PassVerify.sh -h | --help      # Muestra esta ayuda${endColour}"    
 }
 
 HIBP=0
